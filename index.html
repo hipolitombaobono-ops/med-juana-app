@@ -1,0 +1,923 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta name="theme-color" content="#14452f"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="icon" href="icon-192.png"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<title>MED-JUANA — Guinea Ecuatorial</title>
+<style>
+  :root {
+    --bg: #f5f0e8;
+    --surface: #fffdf8;
+    --green: #1a4a2e;
+    --green2: #2d6a47;
+    --green3: #4a9e6b;
+    --amber: #d4872a;
+    --amber2: #f0a84a;
+    --red: #c0392b;
+    --yellow: #e67e22;
+    --text: #1a1a1a;
+    --text2: #555;
+    --border: #d8cfc0;
+    --sidebar-w: 220px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  #sidebar {
+    width: var(--sidebar-w); background: var(--green); color: #fff;
+    display: flex; flex-direction: column; position: fixed; top: 0; left: 0; height: 100vh;
+    z-index: 100; overflow-y: auto;
+  }
+  .sidebar-logo {
+    padding: 24px 20px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.15);
+  }
+  .sidebar-logo h1 { font-family: 'Fraunces', serif; font-size: 22px; letter-spacing: 1px; }
+  .sidebar-logo p { font-size: 11px; opacity: 0.65; margin-top: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 12px 20px; cursor: pointer; font-size: 13.5px; font-weight: 500;
+    border-left: 3px solid transparent; transition: all 0.2s;
+    color: rgba(255,255,255,0.75);
+  }
+  .nav-item:hover { background: rgba(255,255,255,0.1); color: #fff; border-left-color: var(--amber2); }
+  .nav-item.active { background: rgba(255,255,255,0.15); color: #fff; border-left-color: var(--amber2); }
+  .nav-item .icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-section { padding: 12px 20px 4px; font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; opacity: 0.45; margin-top: 8px; }
+  .api-status { padding: 16px 20px; margin-top: auto; border-top: 1px solid rgba(255,255,255,0.1); font-size: 12px; }
+  .api-dot { width: 8px; height: 8px; border-radius: 50%; background: #888; display: inline-block; margin-right: 6px; }
+  .api-dot.ok { background: #4ade80; }
+  .api-dot.err { background: #f87171; }
+
+  /* MAIN */
+  #main { margin-left: var(--sidebar-w); flex: 1; padding: 32px; min-height: 100vh; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-header { margin-bottom: 24px; }
+  .page-header h2 { font-family: 'Fraunces', serif; font-size: 28px; color: var(--green); }
+  .page-header p { color: var(--text2); font-size: 14px; margin-top: 4px; }
+
+  /* CARDS */
+  .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 16px; }
+  .card h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; color: var(--green); }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .grid3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+
+  /* INPUTS */
+  input, select, textarea {
+    width: 100%; padding: 10px 14px; border: 1.5px solid var(--border);
+    border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px;
+    background: #fff; color: var(--text); outline: none; transition: border 0.2s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--green3); }
+  textarea { resize: vertical; min-height: 80px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--text2); margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .form-group { margin-bottom: 14px; }
+
+  /* BUTTONS */
+  .btn { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border: none; border-radius: 8px; font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; }
+  .btn-primary { background: var(--green); color: #fff; }
+  .btn-primary:hover { background: var(--green2); }
+  .btn-amber { background: var(--amber); color: #fff; }
+  .btn-amber:hover { background: var(--amber2); color: var(--text); }
+  .btn-sm { padding: 7px 14px; font-size: 13px; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  /* BADGES */
+  .badge { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-green { background: #dcfce7; color: #166534; }
+  .badge-red { background: #fee2e2; color: #991b1b; }
+  .badge-yellow { background: #fef9c3; color: #854d0e; }
+  .badge-blue { background: #dbeafe; color: #1e40af; }
+  .badge-gray { background: #f3f4f6; color: #374151; }
+
+  /* TRIAGE */
+  .triage-red { border-left: 4px solid var(--red); background: #fff5f5; padding: 16px; border-radius: 8px; }
+  .triage-yellow { border-left: 4px solid var(--yellow); background: #fffbeb; padding: 16px; border-radius: 8px; }
+  .triage-green { border-left: 4px solid #16a34a; background: #f0fdf4; padding: 16px; border-radius: 8px; }
+
+  /* CHAT */
+  #chat-box { height: 380px; overflow-y: auto; background: #f9f7f2; border: 1px solid var(--border); border-radius: 10px; padding: 16px; margin-bottom: 12px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 80%; padding: 12px 16px; border-radius: 12px; font-size: 14px; line-height: 1.5; }
+  .msg.user { background: var(--green); color: #fff; align-self: flex-end; border-bottom-right-radius: 3px; }
+  .msg.ai { background: #fff; border: 1px solid var(--border); align-self: flex-start; border-bottom-left-radius: 3px; }
+  .msg.ai .msg-name { font-size: 11px; font-weight: 700; color: var(--green3); margin-bottom: 4px; }
+  .chat-input-row { display: flex; gap: 8px; }
+  .chat-input-row input { flex: 1; }
+
+  /* PHARMACY ITEM */
+  .pharmacy-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 16px; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; margin-bottom: 10px; }
+  .pharmacy-item .info h4 { font-size: 14px; font-weight: 600; }
+  .pharmacy-item .info p { font-size: 12px; color: var(--text2); margin-top: 2px; }
+  .pharmacy-item .phone { font-size: 13px; color: var(--green3); font-weight: 600; }
+
+  /* MENTOR CARD */
+  .mentor-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 16px; text-align: center; }
+  .mentor-avatar { width: 56px; height: 56px; border-radius: 50%; background: var(--green3); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 20px; margin: 0 auto 10px; }
+  .mentor-card h4 { font-size: 14px; font-weight: 700; }
+  .mentor-card p { font-size: 12px; color: var(--text2); margin-top: 3px; }
+
+  /* LOADING */
+  .spinner { display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; animation: spin 0.7s linear infinite; }
+  .spinner-dark { border-color: rgba(0,0,0,0.15); border-top-color: var(--green); }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-text { color: var(--text2); font-size: 14px; padding: 20px; text-align: center; }
+
+  /* RESULT AREA */
+  .result { margin-top: 16px; }
+
+  /* HOME */
+  .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; text-align: center; }
+  .stat-card .num { font-family: 'Fraunces', serif; font-size: 36px; color: var(--green); }
+  .stat-card .lbl { font-size: 12px; color: var(--text2); margin-top: 4px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .quick-btn { display: flex; align-items: center; gap: 12px; padding: 16px 20px; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; cursor: pointer; transition: all 0.2s; text-decoration: none; color: var(--text); }
+  .quick-btn:hover { border-color: var(--green3); background: #f0fdf4; transform: translateY(-1px); }
+  .quick-btn .qicon { font-size: 24px; }
+  .quick-btn .qtxt h4 { font-size: 14px; font-weight: 600; }
+  .quick-btn .qtxt p { font-size: 12px; color: var(--text2); }
+
+  /* ALERTS */
+  .alert-card { border-radius: 10px; padding: 14px 16px; margin-bottom: 10px; border-left: 4px solid; }
+  .alert-warning { background: #fffbeb; border-color: var(--yellow); }
+  .alert-info { background: #eff6ff; border-color: #3b82f6; }
+  .alert-card h4 { font-size: 14px; font-weight: 700; }
+  .alert-card p { font-size: 13px; margin-top: 4px; color: var(--text2); }
+
+  /* EXAM */
+  .exam-option { padding: 12px 16px; border: 1.5px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: 14px; transition: all 0.15s; }
+  .exam-option:hover { border-color: var(--green3); background: #f0fdf4; }
+  .exam-option.correct { background: #dcfce7; border-color: #16a34a; }
+  .exam-option.wrong { background: #fee2e2; border-color: var(--red); }
+  .exam-feedback { margin-top: 10px; padding: 12px; background: #f8f8f8; border-radius: 8px; font-size: 13px; color: var(--text2); }
+
+  /* NEWS */
+  .news-item { padding: 14px 0; border-bottom: 1px solid var(--border); }
+  .news-item:last-child { border-bottom: none; }
+  .news-item h4 { font-size: 14px; font-weight: 600; }
+  .news-item p { font-size: 13px; color: var(--text2); margin-top: 4px; }
+  .news-item .meta { font-size: 11px; color: #888; margin-top: 6px; }
+
+  /* TRANSLATION */
+  .lang-grid { display: grid; grid-template-columns: repeat(2,1fr); gap: 10px; margin-top: 12px; }
+  .lang-item { background: #f9f7f2; border: 1px solid var(--border); border-radius: 8px; padding: 12px; }
+  .lang-item .lang { font-size: 11px; font-weight: 700; color: var(--green3); text-transform: uppercase; letter-spacing: 0.5px; }
+  .lang-item .word { font-size: 18px; font-family: 'Fraunces', serif; margin-top: 4px; }
+
+  /* INTERACTION */
+  .interaction-safe { background: #f0fdf4; border: 1px solid #86efac; border-radius: 10px; padding: 14px; }
+  .interaction-danger { background: #fff5f5; border: 1px solid #fca5a5; border-radius: 10px; padding: 14px; }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 6px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+
+  @media (max-width: 768px) {
+    #sidebar { width: 60px; } #sidebar .nav-item span, #sidebar .nav-section, #sidebar .sidebar-logo p, #sidebar .api-status span { display: none; }
+    #main { margin-left: 60px; padding: 16px; }
+    .grid2, .grid3 { grid-template-columns: 1fr; }
+  }
+/* ── Diseño sobrio ── */
+:root { --bg:#f5f6f5; --surface:#fff; --green:#14452f; --green2:#1f5d41; --green3:#2f7a56; --amber:#14452f; --amber2:#9ccfb3; --border:#dcdfdc; --text2:#5b625d; }
+body, input, select, textarea, button { font-family: system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif !important; }
+h1,h2,h3,h4,.num,.word { font-family: inherit !important; }
+.sidebar-logo h1 { font-size:18px; font-weight:700; letter-spacing:.5px; }
+.page-header h2 { font-size:24px; font-weight:700; }
+.card, .pharmacy-item, .mentor-card, .stat-card, .quick-btn, .alert-card, .news-item { border-radius:6px !important; box-shadow:none !important; }
+.btn, input, select, textarea { border-radius:6px; }
+.btn-amber { background:#fff; color:var(--green); border:1.5px solid var(--green); }
+.btn-amber:hover { background:#eef5f0; color:var(--green); }
+.nav-item { font-size:14px; }
+.install-btn { display:none; margin:0 20px 10px; width:calc(100% - 40px); padding:9px; background:#fff; color:var(--green); border:0; border-radius:6px; font-weight:600; cursor:pointer; }
+#ios-hint { display:none; font-size:11px; opacity:.75; padding:0 20px 10px; }
+.disclaimer { font-size:12px; color:var(--text2); margin-top:10px; }
+@media (max-width: 768px) {
+  body { flex-direction:column; }
+  #sidebar { position:sticky !important; width:100% !important; height:auto !important; flex-direction:row; align-items:center; overflow-x:auto; overflow-y:hidden; }
+  #sidebar .nav-item span, #sidebar .api-status span { display:inline !important; }
+  .sidebar-logo { padding:12px 16px; border:0; flex-shrink:0; }
+  .sidebar-logo p, .nav-section, .api-status, .install-btn, #ios-hint { display:none !important; }
+  .nav-item { white-space:nowrap; padding:14px 12px; border-left:0 !important; border-bottom:3px solid transparent; }
+  .nav-item.active { border-bottom-color:var(--amber2); }
+  #main { margin-left:0 !important; padding:16px !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<nav id="sidebar">
+  <div class="sidebar-logo">
+    <h1>MED-JUANA</h1>
+    <p>Guinea Ecuatorial</p>
+  </div>
+  <div class="nav-section">Principal</div>
+  <div class="nav-item active" onclick="showPage('home')"><span>Inicio</span></div>
+  <div class="nav-item" onclick="showPage('chat')"><span>Chat con Juana</span></div>
+  <div class="nav-item" onclick="showPage('triage')"><span>Triaje Rápido</span></div>
+  <div class="nav-section">Servicios</div>
+  <div class="nav-item" onclick="showPage('farmacias')"><span>Farmacias</span></div>
+  <div class="nav-item" onclick="showPage('sangre')"><span>Donación Sangre</span></div>
+  <div class="nav-item" onclick="showPage('salud')"><span>Salud Pública</span></div>
+  <div class="nav-section">Conocimiento</div>
+  <div class="nav-item" onclick="showPage('educacion')"><span>Educación</span></div>
+  <div class="nav-item" onclick="showPage('mentores')"><span>Mentores</span></div>
+  <div class="nav-item" onclick="showPage('tradicional')"><span>Med. Tradicional</span></div>
+  <div class="nav-item" onclick="showPage('traduccion')"><span>Traducción</span></div>
+  <div class="api-status"><span class="api-dot ok"></span><span style="font-size:11px;opacity:0.7">Funciona sin conexión</span></div>
+<button class="install-btn" id="install-btn">Instalar app</button>
+<div id="ios-hint">En iPhone: Compartir y luego Añadir a pantalla de inicio.</div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main id="main">
+
+  <!-- HOME -->
+  <div class="page active" id="page-home">
+    <div class="page-header">
+      <h2>MED-JUANA </h2>
+      <p>Plataforma de salud para Guinea Ecuatorial</p>
+    </div>
+    <div class="grid3" style="margin-bottom:24px">
+      <div class="stat-card"><div class="num" id="st-farm">9</div><div class="lbl">Farmacias</div></div>
+      <div class="stat-card"><div class="num" id="st-ment">5</div><div class="lbl">Mentores</div></div>
+      <div class="stat-card"><div class="num" id="st-blood">2</div><div class="lbl">Centros Sangre</div></div>
+    </div>
+    <div class="grid2">
+      <div onclick="showPage('chat')" class="quick-btn"><div class="qtxt"><h4>Chat con Juana</h4><p>Orientación sobre síntomas</p></div></div>
+      <div onclick="showPage('triage')" class="quick-btn"><div class="qtxt"><h4>Triaje Rápido</h4><p>Evalúa urgencia médica</p></div></div>
+      <div onclick="showPage('farmacias')" class="quick-btn"><div class="qtxt"><h4>Farmacias de Guardia</h4><p>Encuentra la más cercana</p></div></div>
+      <div onclick="showPage('sangre')" class="quick-btn"><div class="qtxt"><h4>Donación de Sangre</h4><p>Centros y registro</p></div></div>
+      <div onclick="showPage('educacion')" class="quick-btn"><div class="qtxt"><h4>Educación Médica</h4><p>Noticias y exámenes</p></div></div>
+      <div onclick="showPage('traduccion')" class="quick-btn"><div class="qtxt"><h4>Traducción Médica</h4><p>Fang, Bubi, Ndowe...</p></div></div>
+    </div>
+  </div>
+
+  <!-- CHAT -->
+  <div class="page" id="page-chat">
+    <div class="page-header">
+      <h2>Chat con Juana</h2>
+      <p>Orientación básica sobre síntomas y salud. No sustituye a un médico.</p>
+    </div>
+    <div class="card">
+      <div id="chat-box">
+        <div class="msg ai"><div class="msg-name">Juana</div>Hola, soy Juana. Puedo orientarte sobre síntomas y cuándo acudir a un centro de salud. No receto medicamentos.</div>
+      </div>
+      <div class="form-group" style="margin-bottom:10px">
+        <label>Ciudad</label>
+        <select id="chat-city" style="width:auto">
+          <option value="Malabo">Malabo</option>
+          <option value="Bata" selected>Bata</option>
+          <option value="Mongomo">Mongomo</option>
+        </select>
+      </div>
+      <div class="form-group" id="ai-setup" style="margin-bottom:10px"><label>Clave de IA (Groq)</label><div style="display:flex;gap:8px"><input id="ai-key" type="password" placeholder="gsk_..."/><button class="btn btn-primary btn-sm" onclick="saveKey()">Guardar</button></div><p class="disclaimer" id="ai-status"></p></div>
+      <div class="chat-input-row">
+        <input id="chat-input" type="text" placeholder="Escribe tu pregunta o síntomas..." onkeydown="if(event.key==='Enter')sendChat()"/>
+        <button class="btn btn-primary" onclick="sendChat()" id="chat-btn">Enviar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TRIAGE -->
+  <div class="page" id="page-triage">
+    <div class="page-header">
+      <h2>Triaje Rápido</h2>
+      <p>Describe los síntomas para evaluar el nivel de urgencia</p>
+    </div>
+    <div class="card">
+      <div class="form-group">
+        <label>Ciudad</label>
+        <select id="triage-city">
+          <option value="Malabo">Malabo</option>
+          <option value="Bata" selected>Bata</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Síntomas</label>
+        <textarea id="triage-symptoms" placeholder="Ej: fiebre alta de 39°C, dolor de cabeza fuerte y escalofríos desde hace 2 días..."></textarea>
+      </div>
+      <button class="btn btn-primary" onclick="doTriage()">Analizar síntomas</button>
+      <div class="result" id="triage-result"></div>
+    </div>
+  </div>
+
+  <!-- FARMACIAS -->
+  <div class="page" id="page-farmacias">
+    <div class="page-header">
+      <h2>Farmacias</h2>
+      <p>Encuentra farmacias abiertas cerca de ti</p>
+    </div>
+    <div class="card">
+      <div class="grid2">
+        <div class="form-group">
+          <label>Ciudad</label>
+          <select id="farm-city">
+            <option value="">Todas</option>
+            <option value="Malabo">Malabo</option>
+            <option value="Bata">Bata</option>
+            <option value="Mongomo">Mongomo</option>
+            <option value="Evinayong">Evinayong</option>
+            <option value="Ebibeyin">Ebibeyin</option>
+            <option value="Annobon">Annobon</option>
+            <option value="Luba">Luba</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Filtro</label>
+          <select id="farm-duty">
+            <option value="">Todas</option>
+            <option value="true">Solo de guardia</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="loadFarmacias()">Buscar</button> <button class="btn btn-amber" onclick="openMap()">Ver en el mapa</button>
+      <div class="result" id="farmacias-result"></div>
+    </div>
+    <div class="card">
+      <h3>Verificar stock de medicamento</h3>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="drug-name" type="text" placeholder="Nombre del medicamento (ej: Artesunato)"/>
+        <button class="btn btn-amber btn-sm" onclick="checkStock()">Verificar</button>
+      </div>
+      <div class="result" id="stock-result"></div>
+    </div>
+  </div>
+
+  <!-- SANGRE -->
+  <div class="page" id="page-sangre">
+    <div class="page-header">
+      <h2>Donación de Sangre</h2>
+      <p>Centros de donación y registro de donantes</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>Centros de donación</h3>
+        <div class="form-group" style="margin-top:10px">
+          <label>Filtrar por ciudad</label>
+          <select id="blood-city">
+            <option value="">Todos</option>
+            <option value="Malabo">Malabo</option>
+            <option value="Bata">Bata</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="loadCenters()">Ver centros</button>
+        <div class="result" id="centers-result"></div>
+      </div>
+      <div class="card">
+        <h3>Registrarme como donante</h3>
+        <div class="form-group" style="margin-top:10px">
+          <label>Tu nombre</label>
+          <input id="donor-id" type="text" placeholder="Nombre y apellido"/>
+        </div>
+        <div class="form-group">
+          <label>Tipo de sangre</label>
+          <select id="donor-blood">
+            <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+          </select>
+        </div>
+        <button class="btn btn-amber" onclick="registerDonor()">Registrarme</button>
+        <div class="result" id="donor-result"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SALUD PÚBLICA -->
+  <div class="page" id="page-salud">
+    <div class="page-header">
+      <h2>Salud Pública</h2>
+      <p>Alertas sanitarias y reportes epidemiológicos</p>
+    </div>
+    <div class="grid2">
+      <div class="card">
+        <h3>Alertas sanitarias</h3>
+        <div class="form-group" style="margin-top:10px">
+          <label>Ciudad</label>
+          <select id="alert-city">
+            <option value="Malabo">Malabo</option>
+            <option value="Bata">Bata</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="loadAlerts()">Ver alertas</button>
+        <div class="result" id="alerts-result"></div>
+      </div>
+      <div class="card">
+        <h3>Reportes por barrio</h3>
+        <div class="form-group" style="margin-top:10px">
+          <label>Ciudad</label>
+          <select id="heat-city">
+            <option value="malabo">Malabo</option>
+            <option value="bata">Bata</option>
+          </select>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="loadHeatmap()">Ver datos</button>
+        <div class="result" id="heatmap-result"></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>Reportar síntomas (anónimo)</h3>
+      <div class="grid2" style="margin-top:10px">
+        <div class="form-group">
+          <label>Ciudad</label>
+          <input id="report-city" type="text" placeholder="Bata"/>
+        </div>
+        <div class="form-group">
+          <label>Barrio</label>
+          <input id="report-hood" type="text" placeholder="Centro Ciudad"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Síntoma</label>
+        <input id="report-symptom" type="text" placeholder="Ej: fiebre, diarrea..."/>
+      </div>
+      <button class="btn btn-amber" onclick="reportSymptom()">Enviar reporte anónimo</button>
+      <div class="result" id="report-result"></div>
+    </div>
+  </div>
+
+  <!-- EDUCACION -->
+  <div class="page" id="page-educacion">
+    <div class="page-header">
+      <h2>Educación Médica</h2>
+      <p>Consejos de salud y preguntas de práctica</p>
+    </div>
+    <div class="grid2" style="margin-bottom:16px">
+      <button class="btn btn-primary" onclick="loadNews()">Ver consejos de salud</button>
+      <button class="btn btn-amber" onclick="loadExam()">Iniciar examen de práctica</button>
+    </div>
+    <div class="card" id="news-card" style="display:none">
+      <h3>Consejos de salud</h3>
+      <div id="news-result"></div>
+    </div>
+    <div class="card" id="exam-card" style="display:none">
+      <h3>Examen de práctica</h3>
+      <div id="exam-result"></div>
+    </div>
+  </div>
+
+  <!-- MENTORES -->
+  <div class="page" id="page-mentores">
+    <div class="page-header">
+      <h2>Mentores</h2>
+      <p>Conecta con médicos y especialistas</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input id="mentor-topic" type="text" placeholder="Buscar por especialización o región..." style="flex:1"/>
+        <button class="btn btn-primary btn-sm" onclick="loadMentors()">Buscar</button>
+      </div>
+      <div id="mentors-grid" class="grid3"></div>
+    </div>
+  </div>
+
+  <!-- MEDICINA TRADICIONAL -->
+  <div class="page" id="page-tradicional">
+    <div class="page-header">
+      <h2>Medicina Tradicional</h2>
+      <p>Remedios tradicionales, beneficios e interacciones con medicamentos</p>
+    </div>
+    <div class="card">
+      <div style="display:flex;gap:8px">
+        <input id="remedy-q" type="text" placeholder="Buscar remedio (ej: enzang, jengibre, limón)..." style="flex:1"/>
+        <button class="btn btn-primary btn-sm" onclick="searchRemedy()">Buscar</button>
+      </div>
+      <div class="result" id="remedy-result"></div>
+    </div>
+    <div class="card">
+      <h3>Verificar interacción medicamento</h3>
+      <div class="grid2" style="margin-top:10px">
+        <div class="form-group">
+          <label>Medicamento / Remedio 1</label>
+          <input id="drug1" type="text" placeholder="Ej: Artesunato"/>
+        </div>
+        <div class="form-group">
+          <label>Medicamento / Remedio 2</label>
+          <input id="drug2" type="text" placeholder="Ej: Enzang"/>
+        </div>
+      </div>
+      <button class="btn btn-amber" onclick="checkInteraction()">Verificar interacción</button>
+      <div class="result" id="interaction-result"></div>
+    </div>
+  </div>
+
+  <!-- TRADUCCION -->
+  <div class="page" id="page-traduccion">
+    <div class="page-header">
+      <h2>Traducción Médica</h2>
+      <p>Frases médicas en Fang, Bubi, Ndowe y Annobonés</p>
+    </div>
+    <div class="card">
+      <div class="grid2">
+        <div class="form-group">
+          <label>Frase en español</label>
+          <input id="trans-phrase" type="text" placeholder="Ej: tengo fiebre"/>
+        </div>
+        <div class="form-group">
+          <label>Idioma destino</label>
+          <select id="trans-lang">
+            <option value="Fang">Fang</option>
+            <option value="Bubi">Bubi</option>
+            <option value="Ndowe">Ndowe</option>
+            <option value="Annobones">Annobonés</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="translatePhrase()">Traducir</button>
+      <div class="result" id="trans-result"></div>
+    </div>
+    <div class="card">
+      <h3>Detectar idioma</h3>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input id="detect-text" type="text" placeholder="Escribe texto para detectar el idioma..." style="flex:1"/>
+        <button class="btn btn-amber btn-sm" onclick="detectLang()">Detectar</button>
+      </div>
+      <div class="result" id="detect-result"></div>
+    </div>
+    <div class="card">
+      <h3>Diccionario médico rápido</h3>
+      <div id="phrase-dict" style="margin-top:12px"></div>
+      <button class="btn btn-primary btn-sm" style="margin-top:10px" onclick="loadDict()">Ver frases comunes</button>
+    </div>
+  </div>
+
+</main>
+
+<script>
+let chatHistory = [];
+const API_URL = ''; // Pon aquí la dirección de tu servidor (ver servidor/LEEME.txt)
+// ── Utilidades ───────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm = s => String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) || d; } catch { return d; } };
+const save = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+const msgBox = (cls, t) => `<div class="${cls}" style="margin-top:10px">${t}</div>`;
+const none = t => `<p style="margin-top:12px;color:#6b7280">${t}</p>`;
+
+// ── DATOS (edita estas listas con los datos reales) ──────────────────────────
+// Farmacia: [nombre, dirección, ciudad, teléfono, de guardia]
+const FARMACIAS = [
+  ['Farmacia de ejemplo 1', 'Calle de ejemplo, 1', 'Malabo', '+240 000 000 001', true],
+  ['Farmacia de ejemplo 2', 'Calle de ejemplo, 2', 'Malabo', '+240 000 000 002', false],
+  ['Farmacia de ejemplo 3', 'Calle de ejemplo, 3', 'Malabo', '+240 000 000 003', false],
+  ['Farmacia de ejemplo 4', 'Calle de ejemplo, 4', 'Bata', '+240 000 000 004', true],
+  ['Farmacia de ejemplo 5', 'Calle de ejemplo, 5', 'Bata', '+240 000 000 005', false],
+  ['Farmacia de ejemplo 6', 'Calle de ejemplo, 6', 'Bata', '+240 000 000 006', false],
+  ['Farmacia de ejemplo 7', 'Calle de ejemplo, 7', 'Mongomo', '+240 000 000 007', true],
+  ['Farmacia de ejemplo 8', 'Calle de ejemplo, 8', 'Evinayong', '+240 000 000 008', false],
+  ['Farmacia de ejemplo 9', 'Calle de ejemplo, 9', 'Ebibeyin', '+240 000 000 009', true]
+];
+const MEDICAMENTOS = ['Artesunato', 'Paracetamol', 'Ibuprofeno', 'Amoxicilina', 'Sales de rehidratación'];
+// Centro: [nombre, dirección, ciudad, teléfono]
+const CENTROS = [
+  ['Centro de donación de ejemplo (Malabo)', 'Dirección de ejemplo', 'Malabo', '+240 000 000 010'],
+  ['Centro de donación de ejemplo (Bata)', 'Dirección de ejemplo', 'Bata', '+240 000 000 011']
+];
+// Mentor: [id, nombre, especialidad, región]
+const MENTORES = [
+  ['m1', 'Dr. Ejemplo Uno', 'Medicina general', 'Malabo'],
+  ['m2', 'Dra. Ejemplo Dos', 'Pediatría', 'Bata'],
+  ['m3', 'Dr. Ejemplo Tres', 'Enfermedades infecciosas', 'Bata'],
+  ['m4', 'Dra. Ejemplo Cuatro', 'Ginecología y obstetricia', 'Malabo'],
+  ['m5', 'Dr. Ejemplo Cinco', 'Cirugía general', 'Mongomo']
+];
+const ALERTAS = [
+  ['Prevención de la malaria', 'Duerme con mosquitero, elimina el agua estancada y hazte la prueba si tienes fiebre.', 'warning'],
+  ['Agua segura', 'Hierve o trata el agua de beber para prevenir diarreas y cólera.', 'info'],
+  ['Lavado de manos', 'Lávate las manos con agua y jabón antes de comer y después de ir al baño.', 'info']
+];
+const CONSEJOS = [
+  ['Prevención', 'Mosquiteros y malaria', 'Dormir bajo un mosquitero tratado reduce de forma importante el riesgo de contraer malaria.'],
+  ['Prevención', 'Vacunación al día', 'Mantener el calendario de vacunas de niños y adultos protege a toda la comunidad.'],
+  ['Nutrición', 'Hidratación', 'Beber agua segura a lo largo del día ayuda a prevenir la deshidratación, sobre todo con calor o fiebre.'],
+  ['Higiene', 'Manos limpias', 'Lavarse las manos con jabón es una de las medidas más eficaces para evitar infecciones.'],
+  ['Embarazo', 'Control prenatal', 'Acudir a los controles durante el embarazo permite detectar problemas a tiempo.']
+];
+const EXAMEN = [
+  ['¿Qué mosquito transmite la malaria?', ['Aedes aegypti', 'Anopheles hembra', 'Culex macho', 'Mosca tsé-tsé'], 1, 'La malaria la transmite la hembra del mosquito Anopheles.'],
+  ['¿Cuál es el tratamiento inicial de la deshidratación leve por diarrea?', ['Sales de rehidratación oral', 'Dejar de beber líquidos', 'Antibióticos siempre', 'Solo refrescos'], 0, 'Las sales de rehidratación oral reponen agua y sales perdidas.'],
+  ['¿Qué grupo sanguíneo se considera donante universal de glóbulos rojos?', ['AB+', 'A-', 'O negativo', 'B+'], 2, 'O negativo puede donar glóbulos rojos a casi cualquier receptor.'],
+  ['¿Cuántas compresiones por minuto se recomiendan en una reanimación cardiopulmonar en adultos?', ['40 a 60', '100 a 120', '150 a 200', '20 a 30'], 1, 'El ritmo recomendado es de 100 a 120 compresiones por minuto.'],
+  ['¿La falta de qué vitamina se asocia al raquitismo?', ['Vitamina C', 'Vitamina K', 'Vitamina D', 'Vitamina B12'], 2, 'La deficiencia de vitamina D afecta a la formación de los huesos.'],
+  ['¿Qué se debe hacer primero ante una quemadura leve?', ['Aplicar mantequilla', 'Enfriar con agua corriente fresca', 'Poner hielo directo', 'Reventar las ampollas'], 1, 'Enfriar con agua corriente fresca durante 10 a 20 minutos reduce el daño.']
+];
+const REMEDIOS = [
+  ['Jengibre', 'Se usa tradicionalmente para náuseas y malestar digestivo.', 'En cantidades altas puede irritar el estómago.', 'Puede aumentar el riesgo de sangrado junto con anticoagulantes.'],
+  ['Limón', 'Aporta vitamina C y se toma en infusiones para el resfriado.', 'El exceso puede irritar el estómago y dañar el esmalte dental.', 'Sin interacciones relevantes conocidas en uso alimentario.'],
+  ['Ajo', 'Se usa como alimento y complemento tradicional.', 'Puede causar molestias digestivas.', 'Posible aumento de sangrado con anticoagulantes.'],
+  ['Artemisia', 'Se toma en infusión en algunos lugares contra la fiebre.', 'La OMS no recomienda las infusiones de la planta para prevenir ni tratar la malaria.', 'Consulta antes de combinarla con medicamentos antipalúdicos.']
+];
+const INTERACCIONES = [
+  ['ibuprofeno', 'aspirina', 'Aumenta el riesgo de irritación y sangrado del estómago.'],
+  ['paracetamol', 'alcohol', 'Aumenta el riesgo de daño en el hígado.'],
+  ['aspirina', 'warfarina', 'Riesgo alto de sangrado.'],
+  ['ibuprofeno', 'warfarina', 'Riesgo alto de sangrado.'],
+  ['jengibre', 'warfarina', 'Posible aumento del riesgo de sangrado.'],
+  ['ajo', 'warfarina', 'Posible aumento del riesgo de sangrado.'],
+  ['metronidazol', 'alcohol', 'Puede causar náuseas, vómitos y palpitaciones.']
+];
+const DICT = [
+  ['hola', {Fang:'Mbolo', Bubi:'A itsa', Ndowe:'Mbolo', Annobones:'Na po'}],
+  ['tengo fiebre', {Fang:'Ma wôkh mbeñ', Bubi:'O re n-to o tya'}],
+  ['me duele la cabeza', {Fang:'Nlo wa bî ma', Bubi:'E lapa e n-to o'}],
+  ['malaria', {Fang:'Mbeñ', Bubi:'Susu'}],
+  ['pastillas', {Fang:'Mibira', Bubi:'Miboka'}],
+  ['gracias', {Fang:'Akiba', Bubi:'A anyibese', Ndowe:'Akiba'}]
+];
+
+// ── Chat (modo básico, sin IA) ───────────────────────────────────────────────
+const RED = /no puedo respirar|dificultad.{0,12}respirar|falta de aire|dolor.{0,12}pecho|convuls|inconsciente|desmay|hemorragia|sangrado (abundante|fuerte)|vomit\w* (con )?sangre|rigidez.{0,10}cuello|confusion|paralisis|envenen|mordedura|quemadura grave|hinchazon.{0,12}(cara|lengua|garganta)|suicid/;
+const YELLOW = /fiebre|calentura|escalofrio|vomit|diarrea|deshidrat|dolor (fuerte|intenso)|mucho dolor|sangre|embaraz|herida profunda|dolor al orinar|39|40 ?(grados|°)/;
+const URGENTE = 'Lo que describes puede ser una emergencia. Acude ahora mismo al hospital o centro de salud más cercano, o pide que alguien te lleve. No esperes.';
+const KB = [
+  [/^(hola|buenas|buenos dias|buenas tardes|buenas noches)/, 'Hola, soy Juana. Cuéntame qué síntomas tienes o qué duda de salud te preocupa.'],
+  [/gracias/, 'De nada. Cuídate y, si empeoras, acude a un centro de salud.'],
+  [/receta|que medicina|que tomo|dosis|cuantas pastillas|que pastilla/, 'No puedo recetar medicamentos ni indicar dosis. Un médico o farmacéutico debe valorar tu caso, edad, peso y otras enfermedades. Sí puedo darte consejos generales y orientarte sobre cuándo acudir a un centro de salud.'],
+  [/fiebre|calentura|escalofrio|malaria|paludismo/, 'La fiebre en zonas con malaria debe tomarse en serio.\n1. Hazte una prueba de malaria en un centro de salud lo antes posible.\n2. Bebe líquidos y descansa.\n3. Acude de urgencia si hay convulsiones, confusión, vómitos persistentes o mucha debilidad, o si el enfermo es un niño pequeño o una embarazada.'],
+  [/dolor de cabeza|cefalea|migrana/, 'Para el dolor de cabeza: descansa en un lugar tranquilo, bebe agua y evita pantallas y ruido. Si es muy fuerte, aparece de golpe, o va con fiebre, rigidez de cuello, confusión o vómitos, acude a urgencias.'],
+  [/diarrea|vomit|deshidrat/, 'Lo más importante es no deshidratarse.\n1. Bebe sales de rehidratación oral o agua hervida a sorbos frecuentes.\n2. Come alimentos suaves.\n3. Acude al centro de salud si hay sangre, fiebre alta, más de 2 días de síntomas, o signos de deshidratación (boca seca, orina escasa, mucha sed). En niños y bebés consulta cuanto antes.'],
+  [/\btos\b|gripe|resfriado|catarro|garganta/, 'Descansa, bebe líquidos templados y lávate las manos con frecuencia. Acude al médico si hay dificultad para respirar, fiebre alta, tos con sangre o si dura más de dos semanas.'],
+  [/estomago|barriga|abdominal|gastritis|dolor de panza/, 'Evita comidas pesadas, picantes y alcohol, y bebe agua en pequeños sorbos. Si el dolor es intenso, persistente, con fiebre, vómitos o el abdomen está duro, acude a urgencias.'],
+  [/embaraz|gestacion/, 'Durante el embarazo son importantes los controles prenatales periódicos. Si hay sangrado, dolor fuerte, fiebre, hinchazón de cara y manos, o el bebé se mueve menos, acude al hospital sin esperar.'],
+  [/bebe|nino|nina|hijo|hija/, 'Los niños pequeños pueden empeorar con rapidez. Si tiene fiebre, no come ni bebe, está muy decaído, tiene diarrea o vómitos repetidos, llévalo cuanto antes a un centro de salud.'],
+  [/herida|corte|quemadura/, 'Lava la herida con agua limpia y jabón y cúbrela con un apósito limpio. En una quemadura leve, enfría con agua corriente fresca 10 a 20 minutos. Acude al médico si es profunda, grande, sucia o se infecta.']
+];
+function replyFor(t) {
+  const n = norm(t);
+  if (RED.test(n)) return URGENTE;
+  const hit = KB.find(([re]) => re.test(n));
+  return hit ? hit[1] : 'No tengo una respuesta específica para eso. Puedes usar Triaje Rápido para valorar la urgencia o acudir a un centro de salud. Si quieres, cuéntame los síntomas con más detalle.';
+}
+const SYSTEM = 'Eres Juana, asistente de orientación en salud para Guinea Ecuatorial. Responde en español, claro y breve, con pasos simples. Nunca recetes medicamentos ni indiques dosis. Da consejos generales y explica cuándo acudir a un centro de salud. Ante signos de emergencia (dificultad para respirar, convulsiones, sangrado fuerte, pérdida de conciencia, dolor de pecho) indica acudir de inmediato al hospital. En zonas con malaria, ante fiebre recomienda hacerse una prueba. No des diagnósticos. Si no sabes algo, dilo.';
+async function sendChat() {
+  const input = $('chat-input'), text = input.value.trim();
+  if (!text) return;
+  appendMsg(text, 'user');
+  input.value = '';
+  const key = localStorage.getItem('mj_key');
+  const red = RED.test(norm(text));
+  if (red) appendMsg(URGENTE, 'ai');
+  if ((!key && !API_URL) || !navigator.onLine) { if (!red) appendMsg(replyFor(text), 'ai'); return; }
+  appendMsg('...', 'ai');
+  const wait = $('chat-box').lastChild;
+  try {
+    let ans;
+    if (API_URL) {
+      const r = await fetch(API_URL + '/chat', { method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messages: [...chatHistory.slice(-8), { role: 'user', content: text }], city: $('chat-city').value }) });
+      if (!r.ok) throw new Error(r.status);
+      ans = (await r.json()).text;
+    } else {
+      const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + key },
+        body: JSON.stringify({ model: 'llama-3.3-70b-versatile', temperature: 0.3, max_tokens: 500,
+          messages: [{ role: 'system', content: SYSTEM + ' Ciudad del usuario: ' + $('chat-city').value + '.' }, ...chatHistory.slice(-8), { role: 'user', content: text }] })
+      });
+      if (!r.ok) throw new Error(r.status);
+      ans = (await r.json()).choices[0].message.content.trim();
+    }
+    wait.remove();
+    appendMsg(ans, 'ai');
+    chatHistory.push({ role: 'user', content: text }, { role: 'assistant', content: ans });
+  } catch (e) {
+    wait.remove();
+    appendMsg((e.message === '401' ? 'La clave de IA no es válida. ' : 'No se pudo conectar con la IA. ') + 'Respuesta básica:\n' + replyFor(text), 'ai');
+  }
+}
+function saveKey() {
+  const k = $('ai-key').value.trim();
+  if (k) { localStorage.setItem('mj_key', k); $('ai-key').value = ''; }
+  updAi();
+}
+function updAi() {
+  if (API_URL) { $('ai-setup').style.display = 'none'; return; }
+  $('ai-status').textContent = localStorage.getItem('mj_key') ? 'IA activada en este dispositivo.' : 'Sin clave: respuestas básicas sin IA. Consigue una clave gratis en console.groq.com.';
+}
+function openMap() {
+  window.open('https://www.google.com/maps/search/' + encodeURIComponent('farmacia ' + ($('farm-city').value || 'Guinea Ecuatorial')), '_blank');
+}
+function appendMsg(text, sender) {
+  const box = $('chat-box');
+  const div = document.createElement('div');
+  div.className = 'msg ' + sender;
+  if (sender === 'ai') div.innerHTML = `<div class="msg-name">Juana</div>${esc(text).replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\n/g, '<br>')}`;
+  else div.textContent = text;
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ── Triaje ───────────────────────────────────────────────────────────────────
+function doTriage() {
+  const symptoms = $('triage-symptoms').value.trim();
+  const city = $('triage-city').value;
+  if (!symptoms) return alert('Escribe los síntomas primero');
+  const n = norm(symptoms);
+  let cls, label, text;
+  if (RED.test(n)) {
+    cls = 'triage-red'; label = 'EMERGENCIA';
+    text = URGENTE;
+  } else if (YELLOW.test(n)) {
+    cls = 'triage-yellow'; label = 'URGENCIA MEDIA';
+    text = `Conviene que te vea un profesional hoy. Acude a un centro de salud en ${city}.` + (/fiebre|calentura|escalofrio|39|40/.test(n) ? ' Si tienes fiebre, pide una prueba de malaria.' : '') + ' Si empeoras, ve a urgencias.';
+  } else {
+    cls = 'triage-green'; label = 'ATENCIÓN ORDINARIA';
+    text = 'Por lo que describes no parece urgente. Descansa, bebe líquidos y observa la evolución. Si empeora o no mejora en 2 o 3 días, consulta en un centro de salud.';
+  }
+  const trad = /enzang|remedio|hierba|planta|infusion/.test(n) ? '<p style="margin-top:8px;font-size:13px">Los remedios tradicionales no sustituyen la atención médica. Consulta antes de mezclarlos con medicamentos.</p>' : '';
+  $('triage-result').innerHTML = `<div class="${cls}" style="margin-top:14px"><strong>${label}</strong><p style="margin-top:8px;font-size:14px">${text}</p>${trad}<p style="margin-top:10px;font-size:12px;color:#6b7280">Orientación general. No es un diagnóstico.</p></div>`;
+}
+
+// ── Farmacias ────────────────────────────────────────────────────────────────
+function loadFarmacias() {
+  const city = $('farm-city').value, duty = $('farm-duty').value;
+  const data = FARMACIAS.filter(p => (!city || p[2] === city) && (duty !== 'true' || p[4]));
+  if (!data.length) { $('farmacias-result').innerHTML = none('No se encontraron farmacias.'); return; }
+  $('farmacias-result').innerHTML = '<div style="margin-top:12px">' + data.map(p => `
+    <div class="pharmacy-item">
+      <div class="info"><h4>${p[0]}</h4><p>${p[1]} — ${p[2]}</p></div>
+      <div style="text-align:right"><span class="badge ${p[4] ? 'badge-green' : 'badge-gray'}">${p[4] ? 'De guardia' : 'Cerrada'}</span><p class="phone" style="margin-top:6px">${p[3]}</p></div>
+    </div>`).join('') + '</div>';
+}
+function checkStock() {
+  const drug = $('drug-name').value.trim();
+  if (!drug) return;
+  const ok = MEDICAMENTOS.some(m => norm(m) === norm(drug));
+  $('stock-result').innerHTML = msgBox(ok ? 'interaction-safe' : 'interaction-danger', `<strong>${esc(drug)}</strong>: ${ok ? 'Disponible en farmacias' : 'No disponible actualmente'}`);
+}
+
+// ── Sangre ───────────────────────────────────────────────────────────────────
+function loadCenters() {
+  const city = $('blood-city').value;
+  const data = CENTROS.filter(c => !city || c[2] === city);
+  $('centers-result').innerHTML = data.length ? '<div style="margin-top:12px">' + data.map(c => `
+    <div class="pharmacy-item"><div class="info"><h4>${c[0]}</h4><p>${c[1]} — ${c[2]}</p></div><div class="phone">${c[3]}</div></div>`).join('') + '</div>' : none('No hay centros en esa ciudad.');
+}
+function registerDonor() {
+  const name = $('donor-id').value.trim();
+  if (!name) return alert('Escribe tu nombre');
+  const list = load('mj_donors', []);
+  list.push({ name, blood: $('donor-blood').value, date: new Date().toISOString().slice(0, 10) });
+  save('mj_donors', list);
+  $('donor-id').value = '';
+  $('donor-result').innerHTML = msgBox('interaction-safe', 'Registro guardado en este dispositivo. Gracias por querer donar.');
+}
+
+// ── Salud pública ────────────────────────────────────────────────────────────
+function loadAlerts() {
+  const city = $('alert-city').value;
+  $('alerts-result').innerHTML = '<div style="margin-top:12px">' + ALERTAS.map(a => `
+    <div class="alert-card ${a[2] === 'warning' ? 'alert-warning' : 'alert-info'}"><h4>${a[0]}</h4><p>${a[1]}</p><small style="color:#6b7280;font-size:11px">${city}</small></div>`).join('') + '</div>';
+}
+async function loadHeatmap() {
+  const city = norm($('heat-city').value);
+  const rows = {};
+  let all = load('mj_reports', []);
+  if (API_URL && navigator.onLine) { try { const r = await fetch(API_URL + '/reports?city=' + encodeURIComponent(city)); if (r.ok) all = await r.json(); } catch {} }
+  all.filter(r => norm(r.city) === city).forEach(r => { const k = r.hood + '|' + r.symptom; rows[k] = (rows[k] || 0) + 1; });
+  const keys = Object.keys(rows);
+  if (!keys.length) { $('heatmap-result').innerHTML = none('Aún no hay reportes para esta ciudad.'); return; }
+  const max = Math.max(...keys.map(k => rows[k]));
+  $('heatmap-result').innerHTML = '<div style="margin-top:12px">' + keys.map(k => {
+    const [hood, sym] = k.split('|'), f = rows[k] / max;
+    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+      <span><strong>${esc(hood)}</strong> — ${esc(sym)} (${rows[k]})</span>
+      <div style="width:80px;height:8px;background:#e5e7eb"><div style="width:${f * 100}%;height:100%;background:${f > 0.6 ? '#b91c1c' : f > 0.3 ? '#d97706' : '#15803d'}"></div></div></div>`;
+  }).join('') + '</div>';
+}
+function reportSymptom() {
+  const city = $('report-city').value.trim(), symptom = $('report-symptom').value.trim();
+  if (!city || !symptom) return alert('Completa ciudad y síntoma');
+  const list = load('mj_reports', []);
+  list.push({ city, hood: $('report-hood').value.trim() || 'Desconocido', symptom, date: new Date().toISOString().slice(0, 10) });
+  save('mj_reports', list);
+  if (API_URL && navigator.onLine) fetch(API_URL + '/reports', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(list[list.length - 1]) }).catch(() => {});
+  $('report-symptom').value = '';
+  $('report-result').innerHTML = msgBox('interaction-safe', 'Reporte guardado. Gracias por avisar.');
+}
+
+// ── Educación ────────────────────────────────────────────────────────────────
+function loadNews() {
+  $('news-card').style.display = 'block';
+  $('news-result').innerHTML = CONSEJOS.map(n => `
+    <div class="news-item"><span class="badge badge-green">${n[0]}</span><h4 style="margin-top:6px">${n[1]}</h4><p>${n[2]}</p></div>`).join('');
+}
+let examQuestions = [], currentQ = 0;
+function loadExam() {
+  $('exam-card').style.display = 'block';
+  examQuestions = EXAMEN.map(q => ({ question: q[0], options: q[1], correct_option_index: q[2], explanation: q[3] }));
+  currentQ = 0;
+  showQuestion();
+}
+function showQuestion() {
+  const res = $('exam-result');
+  if (currentQ >= examQuestions.length) {
+    res.innerHTML = `<p style="text-align:center;padding:20px;font-size:16px">Examen completado. Aciertos: ${score} de ${examQuestions.length}. <button class="btn btn-primary btn-sm" style="margin-left:10px" onclick="loadExam()">Repetir</button></p>`;
+    return;
+  }
+  if (currentQ === 0) score = 0;
+  const q = examQuestions[currentQ];
+  res.innerHTML = `<p style="font-size:12px;color:#6b7280;margin-bottom:8px">Pregunta ${currentQ + 1} de ${examQuestions.length}</p>
+    <p style="font-size:15px;font-weight:600;margin-bottom:14px">${q.question}</p>
+    ${q.options.map((o, i) => `<div class="exam-option" onclick="answerQ(${i}, ${q.correct_option_index})">${o}</div>`).join('')}
+    <div id="exam-feedback" class="exam-feedback" style="display:none"></div>`;
+}
+let score = 0;
+function answerQ(idx, correct) {
+  document.querySelectorAll('.exam-option').forEach((el, i) => {
+    el.onclick = null;
+    if (i === correct) el.classList.add('correct'); else if (i === idx) el.classList.add('wrong');
+  });
+  if (idx === correct) score++;
+  const fb = $('exam-feedback');
+  fb.style.display = 'block';
+  fb.innerHTML = `<strong>${idx === correct ? 'Correcto' : 'Incorrecto'}</strong> — ${examQuestions[currentQ].explanation}<br><br><button class="btn btn-primary btn-sm" onclick="currentQ++;showQuestion()">Siguiente</button>`;
+}
+
+// ── Mentores ─────────────────────────────────────────────────────────────────
+function loadMentors() {
+  const t = norm($('mentor-topic').value.trim());
+  const data = MENTORES.filter(m => !t || norm(m[2] + ' ' + m[3]).includes(t));
+  $('mentors-grid').innerHTML = data.length ? data.map(m => `
+    <div class="mentor-card"><div class="mentor-avatar">${m[1].charAt(m[1].indexOf('.') + 2)}</div><h4>${m[1]}</h4><p>${m[2]}</p>
+    <p style="margin-top:4px;font-size:11px;color:#6b7280">${m[3]}</p>
+    <button class="btn btn-primary btn-sm" style="margin-top:10px;width:100%" onclick="requestMentor('${m[0]}', '${m[1]}')">Solicitar mentoría</button></div>`).join('') : none('No se encontraron mentores.');
+}
+function requestMentor(id, name) {
+  const who = prompt(`Escribe tu nombre para solicitar mentoría con ${name}:`);
+  if (!who) return;
+  const list = load('mj_mentor_requests', []);
+  list.push({ mentor: id, student: who, date: new Date().toISOString().slice(0, 10) });
+  save('mj_mentor_requests', list);
+  alert('Solicitud guardada en este dispositivo.');
+}
+
+// ── Medicina tradicional ─────────────────────────────────────────────────────
+function searchRemedy() {
+  const q = norm($('remedy-q').value.trim());
+  if (!q) return;
+  const data = REMEDIOS.filter(r => norm(r[0]).includes(q) || q.includes(norm(r[0])));
+  $('remedy-result').innerHTML = data.length ? '<div style="margin-top:12px">' + data.map(r => `
+    <div class="card" style="margin-bottom:12px"><h3>${r[0]}</h3>
+    <p style="margin-top:8px;font-size:14px">${r[1]}</p>
+    <p style="margin-top:6px;font-size:13px;color:#b45309">Precauciones: ${r[2]}</p>
+    <p style="margin-top:6px;font-size:13px;color:#b91c1c">Interacciones: ${r[3]}</p></div>`).join('') + '</div>' : none('Sin resultados en la lista de la app.');
+}
+function checkInteraction() {
+  const a = norm($('drug1').value.trim()), b = norm($('drug2').value.trim());
+  if (!a || !b) return alert('Ingresa ambos medicamentos');
+  const hit = INTERACCIONES.find(i => (i[0] === a && i[1] === b) || (i[0] === b && i[1] === a));
+  $('interaction-result').innerHTML = hit ? msgBox('interaction-danger', 'Precaución: ' + hit[2] + ' Consulta a un médico o farmacéutico.')
+    : msgBox('card', 'No hay datos de esta combinación en la app. Esto no significa que sea segura: consulta a un farmacéutico o médico.');
+}
+
+// ── Traducción ───────────────────────────────────────────────────────────────
+function translatePhrase() {
+  const p = norm($('trans-phrase').value.trim()), lang = $('trans-lang').value;
+  if (!p) return;
+  const hit = DICT.find(d => norm(d[0]) === p) || DICT.find(d => p.includes(norm(d[0])));
+  const word = hit && hit[1][lang];
+  $('trans-result').innerHTML = word ? `<div class="lang-grid" style="margin-top:12px">
+    <div class="lang-item"><div class="lang">Español</div><div class="word">${hit[0]}</div></div>
+    <div class="lang-item"><div class="lang">${lang}</div><div class="word">${word}</div></div></div>`
+    : none('Esa frase aún no está en el diccionario para ese idioma.');
+}
+function detectLang() {
+  const t = norm($('detect-text').value.trim());
+  if (!t) return;
+  const found = new Set();
+  DICT.forEach(d => Object.entries(d[1]).forEach(([l, w]) => { if (t.includes(norm(w))) found.add(l); }));
+  $('detect-result').innerHTML = found.size ? msgBox('interaction-safe', 'Idioma posible: <strong>' + [...found].join(', ') + '</strong>')
+    : msgBox('card', 'No reconocido. El diccionario de la app es limitado.');
+}
+function loadDict() {
+  $('phrase-dict').innerHTML = DICT.map(([esp, langs]) => `
+    <div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+      <strong style="font-size:14px">${esp}</strong>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:6px">
+        ${Object.entries(langs).map(([l, w]) => `<div style="background:#f3f4f6;border:1px solid var(--border);padding:6px 12px;font-size:13px"><span style="font-size:10px;font-weight:700;color:var(--green2);display:block">${l}</span>${w}</div>`).join('')}
+      </div></div>`).join('');
+}
+
+// ── Instalación (PWA) ────────────────────────────────────────────────────────
+let installEvt = null;
+window.addEventListener('beforeinstallprompt', e => { e.preventDefault(); installEvt = e; $('install-btn').style.display = 'block'; });
+$('install-btn').onclick = async () => { if (!installEvt) return; installEvt.prompt(); await installEvt.userChoice; installEvt = null; $('install-btn').style.display = 'none'; };
+if (/iphone|ipad/i.test(navigator.userAgent) && !navigator.standalone) $('ios-hint').style.display = 'block';
+if ('serviceWorker' in navigator) window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+
+// ── Inicio ───────────────────────────────────────────────────────────────────
+$('st-farm').textContent = FARMACIAS.length;
+$('st-ment').textContent = MENTORES.length;
+$('st-blood').textContent = CENTROS.length;
+loadMentors();
+updAi();
+</script>
+</body>
+</html>
